@@ -1,0 +1,20 @@
+{
+    "name": "pantheion/database",
+    "description": "Database and Query",
+    "authors": [
+        {
+            "name": "Pedro Miguel",
+            "email": "pedro.aos19@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Pantheion\\Database\\": ""
+        }
+    },
+    "minimum-stability": "dev",
+    "require": {
+        "pantheion/facade": "dev-master",
+        "doctrine/dbal": "^4.0@dev"
+    }
+}
