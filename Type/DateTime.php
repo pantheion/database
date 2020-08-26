@@ -7,7 +7,7 @@ use Pantheion\Database\Dialect\Sql;
 
 class DateTime extends Type
 {
-    public static function sql(Sql $sql)
+    public static function sql(string $column, Sql $sql)
     {
     }
 

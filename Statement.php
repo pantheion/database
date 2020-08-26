@@ -64,7 +64,6 @@ class Statement
             return false;
         }
 
-
         return $this->pdoStatement->rowCount() > 0 ? $this->pdoStatement->fetchAll(PDO::FETCH_ASSOC) : true;
     }
 }

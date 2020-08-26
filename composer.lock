@@ -177,12 +177,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/doctrine/dbal.git",
-                "reference": "74419019552822b6a71babb433abab42ca308d9d"
+                "reference": "0dd84bf6fd28408ac6d7dd9ea441516260ec4842"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/doctrine/dbal/zipball/74419019552822b6a71babb433abab42ca308d9d",
-                "reference": "74419019552822b6a71babb433abab42ca308d9d",
+                "url": "https://api.github.com/repos/doctrine/dbal/zipball/0dd84bf6fd28408ac6d7dd9ea441516260ec4842",
+                "reference": "0dd84bf6fd28408ac6d7dd9ea441516260ec4842",
                 "shasum": ""
             },
             "require": {
@@ -278,7 +278,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2020-08-16T02:50:34+00:00"
+            "time": "2020-08-20T18:57:37+00:00"
         },
         {
             "name": "doctrine/event-manager",
@@ -543,16 +543,17 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/pantheion/engine.git",
-                "reference": "d13bad26943011a8d8c315add202ddb1215bcca2"
+                "reference": "e446ef590a154a662070844dc803abdf87a1662b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/pantheion/engine/zipball/d13bad26943011a8d8c315add202ddb1215bcca2",
-                "reference": "d13bad26943011a8d8c315add202ddb1215bcca2",
+                "url": "https://api.github.com/repos/pantheion/engine/zipball/e446ef590a154a662070844dc803abdf87a1662b",
+                "reference": "e446ef590a154a662070844dc803abdf87a1662b",
                 "shasum": ""
             },
             "require": {
                 "hassankhan/config": "dev-master",
+                "pantheion/database": "dev-master",
                 "pantheion/routing": "dev-master",
                 "vlucas/phpdotenv": "^5.1@dev"
             },
@@ -570,7 +571,7 @@
                 }
             ],
             "description": "Engine base",
-            "time": "2020-08-14T19:26:34+00:00"
+            "time": "2020-08-23T21:51:37+00:00"
         },
         {
             "name": "pantheion/facade",
@@ -578,15 +579,16 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/pantheion/facade.git",
-                "reference": "0bb37a5faa89a41ad59d80f8eb0eb7eac5efb675"
+                "reference": "d02fe38192f018c11d7141ffde635e205e3fd129"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/pantheion/facade/zipball/0bb37a5faa89a41ad59d80f8eb0eb7eac5efb675",
-                "reference": "0bb37a5faa89a41ad59d80f8eb0eb7eac5efb675",
+                "url": "https://api.github.com/repos/pantheion/facade/zipball/d02fe38192f018c11d7141ffde635e205e3fd129",
+                "reference": "d02fe38192f018c11d7141ffde635e205e3fd129",
                 "shasum": ""
             },
             "require": {
+                "pantheion/database": "dev-master",
                 "pantheion/helpers": "dev-master",
                 "pantheion/middleware": "dev-master",
                 "pantheion/routing": "dev-master",
@@ -606,7 +608,7 @@
                 }
             ],
             "description": "Facade",
-            "time": "2020-08-16T16:41:01+00:00"
+            "time": "2020-08-23T22:12:00+00:00"
         },
         {
             "name": "pantheion/filesystem",

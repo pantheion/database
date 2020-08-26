@@ -32,4 +32,9 @@ class Connection
         $this->dialect = $dialect;
         return $this;
     }
+
+    public function sql()
+    {
+        return $this->dialect;
+    }
 }

@@ -3,19 +3,25 @@
 namespace Pantheion\Database\Type;
 
 use Pantheion\Database\Dialect\Sql;
+use Pantheion\Facade\Connection;
 
 abstract class Type
 {
     protected static $types = [];
 
-    public abstract static function sql(Sql $dialect);
+    public function __construct(Sql $dialect)
+    {
+        $this->dialect = $dialect;
+    }
+
+    public abstract function sql(array $options = null);
     
-    public static function toDatabaseValue($value) 
+    public function toDatabaseValue($value) 
     {
         return $value;
     }
     
-    public static function toCodeValue($value)
+    public function toCodeValue($value)
     {
         return $value;
     }
@@ -23,7 +29,7 @@ abstract class Type
     public static function get(string $typeClass) 
     {
         if(!array_key_exists($typeClass, static::$types)) {
-            static::$types[$typeClass] = new $typeClass;
+            static::$types[$typeClass] = new $typeClass(Connection::sql());
         }
 
         return static::$types[$typeClass];

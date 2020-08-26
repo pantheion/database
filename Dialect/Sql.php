@@ -4,21 +4,33 @@ namespace Pantheion\Database\Dialect;
 
 class Sql
 {
-    protected const CREATE_TABLE = "CREATE TABLE `%s` (%s) DEFAULT CHARACTER SET=utf8mb4;";
-    protected const DROP_TABLE = "DROP TABLE `%s`";
+    const SELECT = "SELECT %s %s FROM %s %s %s %s %s %s %s";
+
+    const CREATE_TABLE = "CREATE TABLE `%s` (%s) DEFAULT CHARACTER SET=utf8mb4;";
+    const DROP_TABLE = "DROP TABLE `%s`";
+
+    const COLUMN = "%s %s %s %s %s %s";
+    const UNSIGNED = "UNSIGNED";
 
     protected function _($format, ...$args)
     {
         return str_replace("  ", " ", trim(vsprintf($format, $args)));
     }
 
-    public function createTable(string $table, string $columns)
+    public function column(
+        string $name, 
+        string $type,
+        bool $nullable = null, 
+        $default = null, 
+        bool $autoIncrement = null,
+        string $after = null)
     {
-        return $this->_(Sql::CREATE_TABLE, $table, $columns);
-    }
+        dd($type);   
+        // return $this->_(
+        //     static::COLUMN,
+        //     $name,
+        //     $type,
 
-    public function dropTable(string $table)
-    {
-        return $this->_(Sql::DROP_TABLE, $table);
+        // );
     }
 }
