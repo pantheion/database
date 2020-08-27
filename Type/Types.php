@@ -4,7 +4,7 @@ namespace Pantheion\Database\Type;
 
 final class Types 
 {
-    public const BIT = "BIT";
+    public const BIT = "BIT(%)";
     public const BIGINT = "BIGINT";
     public const CHAR = "CHAR(%s)";
     public const DATE = "DATE";

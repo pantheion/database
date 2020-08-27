@@ -2,8 +2,6 @@
 
 namespace Pantheion\Database\Type;
 
-use Pantheion\Database\Dialect\Sql;
-
 class Varchar extends Type
 {
     const MIN_LENGTH = 0;

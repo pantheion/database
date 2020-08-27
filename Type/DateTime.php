@@ -2,21 +2,20 @@
 
 namespace Pantheion\Database\Type;
 
-use Pantheion\Database\Dialect\MySql;
-use Pantheion\Database\Dialect\Sql;
-
 class DateTime extends Type
 {
-    public static function sql(string $column, Sql $sql)
+    public function sql(array $options = null)
     {
+        return Types::DATETIME;
     }
 
-    public static function toDatabaseValue($var)
+    public function toDatabaseValue($var)
     {
-        return $var->format("Y-m-d H:i:s");
+        return $var instanceof \DateTime ? $var->format("Y-m-d H:i:s") : $var;
     }
 
-    public static function toCodeValue($var)
+    public function toCodeValue($var)
     {
+        return \DateTime::createFromFormat("Y-m-d H:i:s", $var);
     }
 }

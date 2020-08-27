@@ -2,8 +2,6 @@
 
 namespace Pantheion\Database\Type;
 
-use Pantheion\Database\Dialect\Sql;
-
 class Integer extends Type
 {
     public function sql($options = null)
@@ -17,7 +15,7 @@ class Integer extends Type
 
     public function toDatabaseValue($var)
     {
-        return strval($var);
+        return intval($var);
     }
 
     public function toCodeValue($var)
