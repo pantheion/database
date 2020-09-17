@@ -4,51 +4,126 @@ namespace Pantheion\Database\Table;
 
 use Pantheion\Facade\Connection;
 use Pantheion\Database\Dialect\Sql;
-use Pantheion\Database\Type\Integer;
-use Pantheion\Database\Type\Varchar;
 
+/**
+ * Represents a table's Schema
+ */
 class Schema
 {
-    protected $charset;
-    protected $collation;
-    protected $columns;
+    use ColumnDefinitions;
 
-    public function __construct()
+    /**
+     * Schema's charset
+     *
+     * @var string
+     */
+    public $charset = "utf8mb4";
+
+    /**
+     * Schema's collation
+     *
+     * @var string
+     */
+    public $collation = "utf8mb4_unicode_ci";
+
+    /**
+     * Table name
+     *
+     * @var string
+     */
+    public $table;
+
+    /**
+     * Schema's columns
+     *
+     * @var Column[]
+     */
+    public $columns;
+
+    /**
+     * Constructor function for Schema
+     *
+     * @param string $table table's name
+     */
+    public function __construct(string $table)
     {
+        $this->table = $table;
         $this->columns = [];    
     }
 
-    protected function add(Column $column)
+    /**
+     * Sets the schema's charset
+     *
+     * @param string $charset
+     * @return Schema
+     */
+    public function charset(string $charset)
     {
-        $this->columns[] = $column;
-        return $column;
+        $this->charset = $charset;
+        return $this;
     }
 
-    public function integer(string $name)
+    /**
+     * Set's the Schema's collation
+     *
+     * @param string $collation
+     * @return Schema
+     */
+    public function collation(string $collation)
     {
-        return $this->add(new Column($name, Integer::class));
+        $this->collation = $collation;
+        return $this;
     }
 
-    public function unsignedInt(string $name)
+    /**
+     * Checks if the Schema has a column with
+     * the name passed as argument
+     *
+     * @param string $name name of the column
+     * @return boolean existance of column in the Schema
+     */
+    public function hasColumn(string $name)
     {
-        return $this->add(new Column($name, Integer::class, ['unsigned' => true]));
+        foreach($this->columns as $column)
+        {
+            if($column->name === $name) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
-    public function varchar(string $name, int $length = 255)
+    /**
+     * Returns a column from the Schema
+     *
+     * @param string $name
+     * @return Column
+     */
+    public function getColumn(string $name)
     {
-        return $this->add(new Column($name, Varchar::class, compact('length')));
+        foreach($this->columns as $column)
+        {
+            if($column->name == $name) {
+                return $column;
+            }
+        }
+
+        throw new \Exception("This schema doesn't a column named {$name}");
     }
 
-    public function toSql(Sql $dialect = null)
+    /**
+     * Converts the schema to SQL
+     *
+     * @return string Schema's SQL representation
+     */
+    public function toSql()
     {
-        $dialect = isset($dialect) ?: Connection::sql();
-        
         $columnsSql = [];
         foreach($this->columns as $column) {
-            $columnsSql[] = $column->toSql($dialect);
+            $columnsSql[] = $column->toSql($this->table, Connection::sql());
         }
         
-        dd($columnsSql);
-        // dd($dialect::SELECT);
+        return join(", ", $columnsSql);
     }
 }
