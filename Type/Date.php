@@ -29,7 +29,7 @@ class Date extends Type
      */
     public function toDatabaseValue($var)
     {
-        return $var instanceof \DateTime ? $this->wrap($var->format("Y-m-d")) : $var;
+        return $var instanceof \DateTime ? $var->format("Y-m-d") : $var;
     }
 
     public function toCodeValue($var)

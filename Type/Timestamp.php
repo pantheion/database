@@ -29,7 +29,7 @@ class Timestamp extends Type
      */
     public function toDatabaseValue($var)
     {
-        return $var instanceof \DateTime ? $this->wrap($var->format("Y-m-d H:i:s")) : $var;
+        return $var instanceof \DateTime ? $var->format("Y-m-d H:i:s") : $var;
     }
 
     public function toCodeValue($var)

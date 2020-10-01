@@ -103,7 +103,14 @@ class Statement
         }
 
         if(Str::contains($this->pdoStatement->queryString, "INSERT INTO")) {
-            return false;
+            return "insert";
+        }
+
+        if (
+            Str::contains($this->pdoStatement->queryString, "UPDATE") ||
+            Str::contains($this->pdoStatement->queryString, "DELETE")
+        ) {
+            return $this->pdoStatement->rowCount();
         }
 
         return $this->pdoStatement->rowCount() > 0 ? $this->pdoStatement->fetchAll(PDO::FETCH_ASSOC) : [];

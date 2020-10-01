@@ -27,6 +27,13 @@ class Schema
     public $collation = "utf8mb4_unicode_ci";
 
     /**
+     * Table's comment
+     *
+     * @var string
+     */
+    public $comment;
+
+    /**
      * Table name
      *
      * @var string
@@ -64,14 +71,26 @@ class Schema
     }
 
     /**
-     * Set's the Schema's collation
+     * Sets the Schema's collation
      *
-     * @param string $collation
+     * @param string $collation table's collation
      * @return Schema
      */
     public function collation(string $collation)
     {
         $this->collation = $collation;
+        return $this;
+    }
+
+    /**
+     * Sets the table's comment
+     *
+     * @param string $comment table's comment
+     * @return Schema
+     */
+    public function comment(string $comment)
+    {
+        $this->comment = $comment;
         return $this;
     }
 

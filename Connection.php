@@ -57,7 +57,7 @@ class Connection
 
         $result = $statement->execute();
 
-        if($result === false) {
+        if($result === "insert") {
             return intval($this->pdo->lastInsertId());
         }
 

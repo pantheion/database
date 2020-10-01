@@ -133,6 +133,13 @@ trait ColumnDefinitions
         return $this->add(new Column($name, SmallInt::class));
     }
 
+    public function softDeletes()
+    {
+        return $this->add(
+            (new Column('deleted_at', DateTime::class))->nullable()
+        );
+    }
+
     public function unsignedSmallInt(string $name)
     {
         return $this->add(new Column($name, SmallInt::class, ['unsigned' => true]));
@@ -160,14 +167,14 @@ trait ColumnDefinitions
         return $this->add(new Column($name, Timestamp::class));
     }
 
-    public function timestamps($timezone = 'UTC')
+    public function timestamps()
     {
         $this->add(
-            (new Column('created_at', Timestamp::class))->nullable()->default(Carbon::now($timezone))
+            (new Column('created_at', Timestamp::class))->nullable()
         );
 
         $this->add(
-            (new Column('updated_at', Timestamp::class))->nullable()->default(Carbon::now($timezone))
+            (new Column('updated_at', Timestamp::class))->nullable()
         );
     }
 

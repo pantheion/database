@@ -2,9 +2,11 @@
 
 namespace Pantheion\Database\Table;
 
+use Pantheion\Database\Query\Builder;
 use Pantheion\Facade\Connection;
 use Pantheion\Facade\Inflection;
 use Pantheion\Facade\Str;
+use Pantheion\Facade\Table as Manager;
 
 /**
  * Represents a SQL table
@@ -67,8 +69,8 @@ class Table
      */
     protected function resolveSchema()
     {
-        $sql = Connection::sql()->columns($this->name);
-        $columns = Connection::execute($sql);
+        $columnsSql = Connection::sql()->columns($this->name);
+        $columns = Connection::execute($columnsSql);
 
         $schemaColumns = $this->resolveSchemaColumns($columns);
         
@@ -76,6 +78,13 @@ class Table
         foreach($schemaColumns as $schemaColumn) {
             $schema->add($schemaColumn);
         }
+
+        $tableSql = Connection::sql()->table($this->name);
+        $table = Connection::execute($tableSql)[0];
+        
+        $schema->charset($table["CHARACTER_SET_NAME"]);
+        $schema->collation($table["COLLATION_NAME"]);
+        $schema->comment($table["TABLE_COMMENT"]);
 
         return $schema;
     }
@@ -230,9 +239,20 @@ class Table
         return $this;
     }
 
-    public function pivot(string $first, string $second, \Closure $schematic = null)
+    public function truncate()
     {
-        
+        $sql = sprintf(Connection::sql()::TRUNCATE_TABLE, $this->name);
+        Connection::execute($sql);
+    }
+
+    /**
+     * Checks if the table is a pivot table
+     *
+     * @return boolean whether the table is a pivot
+     */
+    public function isPivot() 
+    {
+        return Str::contains($this->schema->comment, "PIVOT;");
     }
 
     /**
@@ -244,7 +264,14 @@ class Table
     public function belongsTo()
     {
         $sql = Connection::sql()->belongsTo($this->name);
-        return Connection::execute($sql);
+        $tables = Connection::execute($sql);
+
+        // dd($tables);
+        return array_map(function($table) {
+            return new Table($table["TABLE_NAME"]);
+        }, $tables);
+
+        // return $tables;
     }
 
     /**
