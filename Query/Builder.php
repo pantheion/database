@@ -28,6 +28,11 @@ class Builder
     ];
 
     /**
+     * WHERE Clause with a nested SELECT inside
+     */
+    const WHERE_IN_SELECT = 6;
+
+    /**
      * Possible booleans of WHERE clauses
      */
     const WHERE_BOOLEANS = [
@@ -571,6 +576,9 @@ class Builder
                 case Builder::WHERE_EXTRAS["null"]:
                     $toSqlWheres[] = $this->toSqlWhereExtra($where);
                     break;
+                case Builder::WHERE_IN_SELECT:
+                    $toSqlWheres[] = $this->toSqlWhereInSelect($where);
+                    break;
             }
         }
 
@@ -656,6 +664,45 @@ class Builder
                 "(" . join(" ", array_column($clauses, "query")) . ")"
             ),
             "value" => array_column($where["clauses"], "value")
+        ]; 
+    }
+
+    protected function toSqlWhereInSelect($where)
+    {
+        $column = "`" . $where["column"] . "`"; 
+
+        if (!array_key_exists("boolean", $where)) {
+            return [
+                "query" => sprintf(
+                    $column . " " . Connection::sql()::WHERE_IN,  
+                    sprintf("(%s)", $where["query"]->sql())
+                ),
+                "value" => $where["query"]->values
+            ];
+        }
+
+        if ($where["boolean"] === Builder::WHERE_BOOLEANS["or"]) {
+            return [
+                "query" => sprintf(
+                    Connection::sql()::WHERE_OR,
+                    sprintf(
+                        $column . " " . Connection::sql()::WHERE_IN, 
+                        sprintf("(%s)", $where["query"]->sql())
+                    )
+                ),
+                "value" => $where["query"]->values
+            ];
+        }
+
+        return [
+            "query" => sprintf(
+                Connection::sql()::WHERE_AND,
+                sprintf(
+                    $column . " " . Connection::sql()::WHERE_IN, 
+                    sprintf("(%s)", $where["query"]->sql())
+                )
+            ),
+            "value" => $where["query"]->values
         ]; 
     }
 
@@ -991,6 +1038,31 @@ class Builder
     public function find(int $id)
     {
         return $this->where('id', $id)->get();
+    }
+
+    public function whereInSelect(string $column, string $table, \Closure $conditions)
+    {
+        $query = new Builder($table);
+        $conditions($query);
+
+        $this->wheres[] = [
+            "type" => Builder::WHERE_IN_SELECT,
+            "column" => $column,
+            "query" => $query,
+            "boolean" => Builder::WHERE_BOOLEANS["and"]
+        ];
+    }
+
+    public function orWhereInSelect(string $table, \Closure $conditions)
+    {
+        $query = new Builder($table);
+        $conditions($query);
+
+        $this->wheres[] = [
+            "type" => Builder::WHERE_IN_SELECT,
+            "query" => $query,
+            "boolean" => Builder::WHERE_BOOLEANS["or"]
+        ];
     }
 
     /**
