@@ -157,7 +157,11 @@ class Builder
     public function __construct(string $table)
     {      
         $this->table = $table;
-        $this->columns = ['*'];
+        $this->columns = [
+            $this->table => [
+                ['name' => '*']
+            ]
+        ];
         $this->distinct = false;
         $this->wheres = [];
         $this->orderBy = [];
@@ -644,7 +648,7 @@ class Builder
         foreach($this->columns as $table => $tableColumns) {
             foreach($tableColumns as $column) {
                 $name = $column["name"];
-                $columnSql = "`$table`.`$name`";
+                $columnSql = $name !== "*" ? "`$table`.`$name`" : "`$table`.$name";
 
                 if(array_key_exists("alias", $column)) {
                     $alias = $column["alias"];
