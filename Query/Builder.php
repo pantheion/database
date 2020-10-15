@@ -6,6 +6,22 @@ use Pantheion\Facade\Arr;
 use Pantheion\Facade\Str;
 use Pantheion\Facade\Connection;
 
+/**
+ * Database query builder class
+ * 
+ * @method \Pantheion\Database\Query\Builder whereIn(string $column, array $values) 
+ * @method \Pantheion\Database\Query\Builder whereNotIn(string $column, array $values) 
+ * @method \Pantheion\Database\Query\Builder orWhereIn(string $column, array $values) 
+ * @method \Pantheion\Database\Query\Builder orWhereNotIn(string $column, array $values) 
+ * @method \Pantheion\Database\Query\Builder whereBetween(string $column, array $values) 
+ * @method \Pantheion\Database\Query\Builder whereNotBetween(string $column, array $values) 
+ * @method \Pantheion\Database\Query\Builder orWhereBetween(string $column, array $values) 
+ * @method \Pantheion\Database\Query\Builder orWhereNotBetween(string $column, array $values) 
+ * @method \Pantheion\Database\Query\Builder whereNull(string $column) 
+ * @method \Pantheion\Database\Query\Builder whereNotNull(string $column) 
+ * @method \Pantheion\Database\Query\Builder orWhereNull(string $column) 
+ * @method \Pantheion\Database\Query\Builder orWhereNotNull(string $column) 
+ */
 class Builder
 {
     /**
@@ -160,8 +176,17 @@ class Builder
      */
     public function select(...$columns)
     {
-        $this->columns = array_map(function($column) {
-            return "`" . $column . "`";
+        $this->columns = [];
+        $this->columns[$this->table] = array_map(function($column) {
+            if(!is_array($column) && is_string($column)) {
+                return ["name" => $column];
+            }
+
+            list($name, $alias) = $column;
+            return [
+                "name" => $name,
+                "alias" => $alias,
+            ];
         }, $columns);
 
         return $this;
@@ -190,7 +215,20 @@ class Builder
      */
     public function where(...$args) 
     {
-        $this->wheres[] = $this->resolveWhere(Builder::WHERE_BOOLEANS["and"], ...$args);
+        $this->wheres[] = $this->proxyWhere(Builder::WHERE_BOOLEANS["and"], ...$args);
+
+        return $this;
+    }
+
+    /**
+     * Adds an OR WHERE clause to the query
+     *
+     * @param ...$args conditions for the WHERE clause
+     * @return Builder
+     */
+    public function orWhere(...$args)
+    {
+        $this->wheres[] = $this->proxyWhere(Builder::WHERE_BOOLEANS["or"], ...$args);
 
         return $this;
     }
@@ -204,7 +242,7 @@ class Builder
      * @param ...$args conditions for the WHERE clause
      * @return array
      */
-    public function resolveWhere(string $boolean, ...$args) 
+    protected function proxyWhere(string $boolean, ...$args) 
     {
         switch(count($args)) {
             case 1:
@@ -214,6 +252,38 @@ class Builder
                 return $this->resolveBasic($boolean, ...$args);
                 break;
         }
+    }
+
+    /**
+     * Resolves a basic WHERE clause
+     *
+     * @param string $boolean whether it's an AND or OR where
+     * @param ...$args conditions for the WHERE clause
+     * @return array
+     */
+    protected function resolveBasic(string $boolean, ...$args)
+    {
+        if (count($args) === 2) {
+            list($column, $value) = $args;
+
+            return [
+                "type" => Builder::WHERE_BASIC,
+                "column" => $this->formatColumn($column),
+                "operator" => "=",
+                "value" => $value,
+                "boolean" => $boolean
+            ];
+        }
+
+        list($column, $operator, $value) = $args;
+
+        return [
+            "type" => Builder::WHERE_BASIC,
+            "column" => $this->formatColumn($column),
+            "operator" => $operator,
+            "value" => $value,
+            "boolean" => $boolean
+        ];
     }
 
     /**
@@ -255,48 +325,63 @@ class Builder
     }
 
     /**
-     * Resolves a basic WHERE clause
-     *
-     * @param string $boolean whether it's an AND or OR where
-     * @param ...$args conditions for the WHERE clause
-     * @return array
+     * Adds a where clause that is performed
+     * with a select result
+     * 
+     * @param string $column column to perform the where
+     * @param string $table table to perform the where-select
+     * @param \Closure $conditions where conditions
+     * @return Builder
      */
-    protected function resolveBasic(string $boolean, ...$args)
+    public function whereInSelect(string $column, string $table, \Closure $conditions)
     {
-        if(count($args) === 2) {
-            list($column, $value) = $args;
+        $query = new Builder($table);
+        $conditions($query);
 
-            return [
-                "type" => Builder::WHERE_BASIC,
-                "column" => $column,
-                "operator" => "=",
-                "value" => $value,
-                "boolean" => $boolean
-            ];
-        }
-
-        list($column, $operator, $value) = $args;
-
-        return [
-            "type" => Builder::WHERE_BASIC,
-            "column" => $column,
-            "operator" => $operator,
-            "value" => $value,
-            "boolean" => $boolean
+        $this->wheres[] = [
+            "type" => Builder::WHERE_IN_SELECT,
+            "column" => $this->formatColumn($column),
+            "query" => $query,
+            "boolean" => Builder::WHERE_BOOLEANS["and"]
         ];
+
+        return $this;
     }
 
     /**
-     * Adds an OR WHERE clause to the query
-     *
-     * @param ...$args conditions for the WHERE clause
+     * Adds a where clause that is performed
+     * with a select result with an OR boolean
+     * 
+     * @param string $column column to perform the where
+     * @param string $table table to perform the where-select
+     * @param \Closure $conditions where conditions
      * @return Builder
      */
-    public function orWhere(...$args)
+    public function orWhereInSelect(string $column, string $table, \Closure $conditions)
     {
-        $this->wheres[] = $this->resolveWhere(Builder::WHERE_BOOLEANS["or"], ...$args);
+        $query = new Builder($table);
+        $conditions($query);
+
+        $this->wheres[] = [
+            "type" => Builder::WHERE_IN_SELECT,
+            "column" => $this->formatColumn($column),
+            "query" => $query,
+            "boolean" => Builder::WHERE_BOOLEANS["or"]
+        ];
 
         return $this;
+    }
+
+    /**
+     * Returns a column formatted for
+     * the query
+     * 
+     * @param string $column column's name
+     * @return string
+     */
+    protected function formatColumn(string $column)
+    {
+        return "`{$this->table}`.`{$column}`";
     }
 
     /**
@@ -338,7 +423,7 @@ class Builder
      */
     public function having(...$args)
     {
-        $this->having[] = $this->resolveWhere(Builder::WHERE_BOOLEANS["and"], ...$args);
+        $this->having[] = $this->proxyWhere(Builder::WHERE_BOOLEANS["and"], ...$args);
         return $this;
     }
 
@@ -372,13 +457,19 @@ class Builder
      * @param string $table table's name
      * @return Builder
      */
-    public function join(string $table)
+    public function join(string $table, \Closure $conditions = null)
     {
+        $join = new JoinBuilder($table, $this->table);
+        if($conditions) {
+            $conditions($join);
+        }
+
         $this->joins[] = [
             "type" => "inner",
-            "table" => $table
+            "table" => $table,
+            "join" => $join
         ];
-
+        
         return $this;
     }
 
@@ -484,6 +575,11 @@ class Builder
         Connection::execute($sql, $updateValues);
     }
 
+    /**
+     * Deletes a record from the table
+     * 
+     * @return void
+     */
     public function delete()
     {
         list($whereQuery, $whereValues) = $this->toSqlWheres();
@@ -492,9 +588,15 @@ class Builder
         Connection::execute($sql, $whereValues ?: []);
     }
 
-    public function truncate()
+    /**
+     * Executes a raw SQL
+     * 
+     * @param string $sql SQL string to execute
+     * @return mixed
+     */
+    public function raw(string $sql)
     {
-
+        return Connection::execute($sql);
     }
 
     /**
@@ -506,6 +608,8 @@ class Builder
     public function sql()
     {
         $dialect = Connection::sql();
+
+        $joins = $this->toSqlJoins();
 
         list($whereQuery, $whereValues) = $this->toSqlWheres();
         list($havingQuery, $havingValues) = $this->toSqlHaving();
@@ -520,6 +624,7 @@ class Builder
             $this->distinct ? $dialect::DISTINCT : "",
             $this->toSqlColumns(),
             $this->toSqlTable(),
+            $joins,
             $whereQuery,
             $this->toSqlGroupBy(),
             $havingQuery,
@@ -535,7 +640,27 @@ class Builder
      */
     protected function toSqlColumns()
     {
-        return join(", ", $this->columns);
+        $columns = [];
+        foreach($this->columns as $table => $tableColumns) {
+            foreach($tableColumns as $column) {
+                $name = $column["name"];
+                $columnSql = "`$table`.`$name`";
+
+                if(array_key_exists("alias", $column)) {
+                    $alias = $column["alias"];
+
+                    $columnSql = sprintf(
+                        Connection::sql()::SELECT_AS,
+                        $columnSql,
+                        "`{$alias}`"
+                    );
+                }
+
+                $columns[] = $columnSql;
+            }
+        }
+
+        return join(", ", $columns);
     }
 
     /**
@@ -545,7 +670,31 @@ class Builder
      */
     protected function toSqlTable()
     {
-        return "`" . $this->table . "`";
+        return "`{$this->table}`";
+    }
+
+    /**
+     * Returns the SQL for the joins
+     * 
+     * @return string
+     */
+    protected function toSqlJoins()
+    {
+        if(!$this->joins) {
+            return "";
+        }
+
+        $joinSql = [];
+        foreach($this->joins as $join)
+        {
+            $joinBuilder = $join["join"];
+
+            $this->columns = Arr::merge($this->columns, $joinBuilder->getJoinColumns());
+            $this->wheres = Arr::merge($this->wheres, $join["join"]->getJoinWheres());
+            $joinSql[] = $joinBuilder->toSqlJoin();
+        }
+
+        return join(" ", $joinSql);
     }
 
     /**
@@ -595,34 +744,24 @@ class Builder
      */
     protected function toSqlWhereBasic(array $where)
     {
-        $column = "`" . $where["column"] . "`";
+        $query = sprintf("%s %s ?", $where["column"], $where["operator"]);
 
         if(!array_key_exists("boolean", $where)) {
             return [
-                "query" => sprintf(
-                    "%s %s ?",
-                    $column,
-                    $where["operator"]
-                ),
+                "query" => $query,
                 "value" => [$where["value"]]
             ];
         }
 
         if($where["boolean"] === Builder::WHERE_BOOLEANS["or"]) {
             return [
-                "query" => sprintf(
-                    Connection::sql()::WHERE_OR,
-                    $column . " " . $where["operator"] . " ?"
-                ),
+                "query" => sprintf(Connection::sql()::WHERE_OR, $query),
                 "value" => [$where["value"]]
             ]; 
         }
 
         return [
-            "query" => sprintf(
-                Connection::sql()::WHERE_AND,
-                $column . " " . $where["operator"] . " ?"
-            ),
+            "query" => sprintf(Connection::sql()::WHERE_AND, $query),
             "value" => [$where["value"]]
         ]; 
     }
@@ -641,67 +780,56 @@ class Builder
             $clauses[] = $this->toSqlWhereBasic($clause);
         }
 
+        $query = sprintf("(%s)", join(" ", array_column($clauses, "query")));
+
         if(!array_key_exists("boolean", $where)) {
             return [
-                "query" => sprintf("(%s)", join(" ", array_column($clauses, "query"))),
+                "query" => $query,
                 "value" => array_column($where["clauses"], "value")
             ];
         }
 
         if($where["boolean"] === Builder::WHERE_BOOLEANS["or"]) {
             return [
-                "query" => sprintf(
-                    Connection::sql()::WHERE_OR,
-                    "(" . join(" ", array_column($clauses, "query")) . ")"
-                ),
+                "query" => sprintf(Connection::sql()::WHERE_OR, $query),
                 "value" => array_column($where["clauses"], "value")
             ]; 
         }
 
         return [
-            "query" => sprintf(
-                Connection::sql()::WHERE_AND,
-                "(" . join(" ", array_column($clauses, "query")) . ")"
-            ),
+            "query" => sprintf(Connection::sql()::WHERE_AND, $query),
             "value" => array_column($where["clauses"], "value")
         ]; 
     }
 
+    /**
+     * Returns the SQL for a Where In Select clause
+     * 
+     * @return array
+     */
     protected function toSqlWhereInSelect($where)
     {
-        $column = "`" . $where["column"] . "`"; 
+        $query = sprintf(
+            $where["column"] . " " . Connection::sql()::WHERE_IN,
+            sprintf("(%s)", $where["query"]->sql())
+        );
 
         if (!array_key_exists("boolean", $where)) {
             return [
-                "query" => sprintf(
-                    $column . " " . Connection::sql()::WHERE_IN,  
-                    sprintf("(%s)", $where["query"]->sql())
-                ),
+                "query" => $query,
                 "value" => $where["query"]->values
             ];
         }
 
         if ($where["boolean"] === Builder::WHERE_BOOLEANS["or"]) {
             return [
-                "query" => sprintf(
-                    Connection::sql()::WHERE_OR,
-                    sprintf(
-                        $column . " " . Connection::sql()::WHERE_IN, 
-                        sprintf("(%s)", $where["query"]->sql())
-                    )
-                ),
+                "query" => sprintf(Connection::sql()::WHERE_OR, $query),
                 "value" => $where["query"]->values
             ];
         }
 
         return [
-            "query" => sprintf(
-                Connection::sql()::WHERE_AND,
-                sprintf(
-                    $column . " " . Connection::sql()::WHERE_IN, 
-                    sprintf("(%s)", $where["query"]->sql())
-                )
-            ),
+            "query" => sprintf(Connection::sql()::WHERE_AND, $query),
             "value" => $where["query"]->values
         ]; 
     }
@@ -713,32 +841,24 @@ class Builder
      */
     protected function toSqlWhereExtra(array $where)
     {
-        $whereType = $this->toSqlWhereExtraType($where);
-        
-        $column = "`" . $where["column"] . "`";
+        $query = sprintf("%s %s", $where["column"], $this->toSqlWhereExtraType($where));
 
         if(!array_key_exists("boolean", $where)) {
             return [
-                "query" => $column . " " . $whereType,
+                "query" => $query,
                 "value" => [isset($where["values"]) ? $where["values"] : null]
             ];
         }
 
         if($where["boolean"] === Builder::WHERE_BOOLEANS["or"]) {
             return [
-                "query" => sprintf(
-                    Connection::sql()::WHERE_OR,
-                    $column . " " . $whereType
-                ),
+                "query" => $query,
                 "value" => [isset($where["values"]) ? $where["values"] : null]
             ]; 
         }
 
         return [
-            "query" => sprintf(
-                Connection::sql()::WHERE_AND,
-                $column . " " . $whereType
-            ),
+            "query" => $query,
             "value" => [isset($where["values"]) ? $where["values"] : null]
         ]; 
     }
@@ -753,13 +873,16 @@ class Builder
     {
         if($where["type"] === Builder::WHERE_EXTRAS["between"]) {
             return $where["not"] ? Connection::sql()::WHERE_NOT_BETWEEN : Connection::sql()::WHERE_BETWEEN;
-        } else if($where["type"] === Builder::WHERE_EXTRAS["in"]) {
+        } 
+        
+        if($where["type"] === Builder::WHERE_EXTRAS["in"]) {
             $whereInPlaceholders = "(" . join(",", array_pad(array(), count($where["values"]), "?")) . ")";
-
             return $where["not"] ?
                 sprintf(Connection::sql()::WHERE_NOT_IN, $whereInPlaceholders) : 
                 sprintf(Connection::sql()::WHERE_IN, $whereInPlaceholders);
-        } else if($where["type"] === Builder::WHERE_EXTRAS["null"]) {
+        }
+        
+        if($where["type"] === Builder::WHERE_EXTRAS["null"]) {
             return $where["not"] ? Connection::sql()::WHERE_NOT_NULL : Connection::sql()::WHERE_NULL;
         }
     }
@@ -1040,31 +1163,6 @@ class Builder
         return $this->where('id', $id)->get();
     }
 
-    public function whereInSelect(string $column, string $table, \Closure $conditions)
-    {
-        $query = new Builder($table);
-        $conditions($query);
-
-        $this->wheres[] = [
-            "type" => Builder::WHERE_IN_SELECT,
-            "column" => $column,
-            "query" => $query,
-            "boolean" => Builder::WHERE_BOOLEANS["and"]
-        ];
-    }
-
-    public function orWhereInSelect(string $table, \Closure $conditions)
-    {
-        $query = new Builder($table);
-        $conditions($query);
-
-        $this->wheres[] = [
-            "type" => Builder::WHERE_IN_SELECT,
-            "query" => $query,
-            "boolean" => Builder::WHERE_BOOLEANS["or"]
-        ];
-    }
-
     /**
      * PHP's magic method to resolve
      * method calls
@@ -1082,7 +1180,7 @@ class Builder
                 (Str::contains($name, "where") || Str::contains($name, "orWhere")) &&
                 Str::endsWith($name, $where)
             ) {
-                return $this->resolveExtraWhere($where, $name, $args);
+                return $this->callExtraWhere($where, $name, $args);
             }
         }
 
@@ -1098,9 +1196,8 @@ class Builder
      * @param array $args where conditions
      * @return Builder
      */
-    protected function resolveExtraWhere(string $methodName, string $name, array $args)
+    protected function callExtraWhere(string $methodName, string $name, array $args)
     {
-        $method = "resolve" . $methodName;
         $identifier = strtolower($methodName);
 
         $this->validateExtraWhere($identifier, $args);
@@ -1176,7 +1273,7 @@ class Builder
             }
         } else {
             if(count($args) < 2) {
-                throw new \Exception("The whereNull type methods requires two parameteres, the column name and an array of values");
+                throw new \Exception("The dynamic where type methods requires two parameteres, the column name and an array of values");
             }
 
             if(!is_string($args[0])) {

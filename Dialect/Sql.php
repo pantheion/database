@@ -12,8 +12,9 @@ class Sql
     /**
      * SELECT Clauses
      */
-    // [columns] [distinct] [table] [group by] [having] [order by] [limit and offset]
-    const SELECT = "SELECT %s %s FROM %s %s %s %s %s %s";
+    // [columns] [distinct] [table] [join] [group by] [having] [order by] [limit and offset]
+    const SELECT = "SELECT %s %s FROM %s %s %s %s %s %s %s";
+    const SELECT_AS = "%s AS %s";
     const DISTINCT = "DISTINCT";
     const WHERE = "WHERE %s";
     const WHERE_AND = "AND %s";
@@ -30,6 +31,8 @@ class Sql
     const LIMIT = "LIMIT %s";
     const LIMIT_MAX = "18446744073709551615";
     const OFFSET = "OFFSET %s";
+    const JOIN = "JOIN %s %s";
+    const JOIN_ON = "ON %s";
 
     /**
      * Tables
