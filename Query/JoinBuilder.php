@@ -39,7 +39,7 @@ class JoinBuilder extends Builder
      * @param string $baseColumn base table's column
      * @return JoinBuilder
      */
-    protected function on(string $column, string $baseColumn)
+    public function on(string $column, string $baseColumn)
     {
         $this->on = [
             "`{$this->table}`.`{$column}`",
