@@ -2,3 +2,4 @@ vendor/
 notes.txt
 index.php
 composer.lock
+database/

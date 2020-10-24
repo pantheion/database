@@ -16,6 +16,7 @@
     "require": {
         "pantheion/facade": "dev-master",
         "doctrine/dbal": "^4.0@dev",
-        "nesbot/carbon": "^2.0@dev"
+        "nesbot/carbon": "^2.0@dev",
+        "pantheion/filesystem": "dev-master"
     }
 }
